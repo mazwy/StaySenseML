@@ -4,23 +4,61 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-This repo currently contains only `README.md` — planning notes for a hotel-cancellation logistic-regression project. No notebook, source files, dependency manifest, or data file exists yet. The deliverable described in the notes is a single Jupyter notebook (charts inline) trained on the tidytuesday `hotels.csv` (~119k rows, two Portuguese hotels, 2015–2017).
+Hotel-cancellation prediction. The notebook `project.ipynb` is the analyst-facing walkthrough (EDA, cleaning, feature engineering, logistic regression with grid search, evaluation, write-up). The reusable code lives in `src/hotels/` and is imported by the notebook, the (future) FastAPI service, the DVC pipeline, and tests.
+
+Current AUC: test 0.8971, CV 0.8986 with `LogisticRegression(class_weight='balanced', C=1.0, penalty='l1')`.
+
+## Layout
+
+- `project.ipynb` — analyst notebook. Built from `_build_nb.py` (cell list + executor). To regenerate: `.venv/bin/python _build_nb.py`.
+- `src/hotels/` — installable package (`pip install -e .` via `pyproject.toml`).
+  - `config.py` — column lists, paths, `RANDOM_STATE`, `COUNTRY_MIN_FREQUENCY`, `ADR_MAX`. Single source of truth for hyperparameters and column splits.
+  - `data.py` — `load_raw`, `drop_leakage`, `fill_missing`, `drop_junk_rows`, `clean`.
+  - `features.py` — `add_engineered_features`, `drop_redundant_columns`, `engineer`.
+  - `preprocess.py` — `build_preprocessor` (ColumnTransformer factory).
+  - `split.py` — `split_xy`, `make_train_test` (stratified 80/20).
+- `docker-compose.yml` — services (currently: `mlflow`).
+- `docker/mlflow/Dockerfile` — MLflow tracking server image.
+- `scripts/mlflow_smoke.py` — confirms the tracking server is reachable.
+- `hotels.csv` — raw data, gitignored.
+- `.venv/` — uv-managed virtualenv. Always invoke Python as `.venv/bin/python ...`.
+
+## Common commands
+
+```bash
+# Activate env (or invoke .venv/bin/python directly).
+source .venv/bin/activate
+
+# Rebuild and execute the notebook.
+.venv/bin/python _build_nb.py
+
+# MLflow tracking server (http://localhost:5001).
+docker compose up -d mlflow
+docker compose down
+
+# MLflow smoke test (logs one run).
+.venv/bin/python scripts/mlflow_smoke.py
+```
+
+## MLflow
+
+The tracking server runs in Docker at `http://localhost:5001` (host port 5001 because macOS occupies 5000 for AirPlay). Backend is SQLite, artifact store is `/mlflow/artifacts` inside the container, both on named docker volumes (`mlflow-store`, `mlflow-artifacts`). The server is started with `--serve-artifacts` so the client never touches the artifact filesystem directly. Clients should set `MLFLOW_TRACKING_URI=http://localhost:5001`.
 
 ## Project-specific constraints
 
-These are non-obvious decisions already made in `README.md` — treat them as ground truth rather than re-debating them:
+These are non-obvious decisions baked into the notebook and modules. Treat them as ground truth.
 
-- **Target leakage — drop first**: `reservation_status` and `reservation_status_date` leak the target (`is_canceled`). They must be dropped before any EDA/modeling step. Leaving them in produces ~100% accuracy and a meaningless model.
-- **Split before scaling, always**: fit `StandardScaler`/`OneHotEncoder` inside a `Pipeline` after the stratified 80/20 split. Scaling before splitting leaks test statistics into training.
-- **High-cardinality `country`**: 170+ values. Use `OneHotEncoder(min_frequency=..., handle_unknown="ignore")` to bucket the long tail and tolerate unseen test categories.
-- **Class imbalance ~37/63**: use `class_weight="balanced"`. Headline metric is **ROC AUC + recall on the cancelled class**, not accuracy — the "never cancels" baseline already hits ~63%.
-- **`deposit_type=Non-Refund` is a known data artefact**: it shows an absurdly high cancel rate that's backwards from intuition. Flag it as a caveat in the write-up; do not build a narrative on it.
-- **Missing-value handling is column-specific**: `children` → `fillna(0)` (only 4 NaNs); `country` → `"Unknown"`; `agent`/`company` → convert to `has_agent`/`has_company` binary flags, drop the originals (do not impute the IDs).
-- **Junk-row filters**: drop rows where `adults + children + babies == 0`; drop the `adr` outlier (~5400) by filtering `adr < 1000`.
-- **Engineered features**: `total_nights` (weekend + week nights), `total_guests`, `is_family` (kids or babies > 0), `room_changed` (`reserved_room_type != assigned_room_type`). Drop the two room-type columns after deriving `room_changed`, plus the split-out arrival date pieces (year / week_number / day_of_month). Keep `arrival_date_month` as a categorical for seasonality.
-- **Model + tuning**: `LogisticRegression` with `GridSearchCV` over `C` (0.01 … 10) and `l1`/`l2` penalty (`liblinear` or `saga` solver), scored on `roc_auc`, 5-fold stratified.
-- **Interpretation**: pull `coef_`, `exp()` into odds ratios, plot top 15 by absolute value. Expected signs — positive: `lead_time`, `previous_cancellations`, `deposit_type`, `market_segment`. Negative: `total_of_special_requests`, `required_car_parking_spaces`, `is_repeated_guest`.
+- **Target leakage, drop first**: `reservation_status` and `reservation_status_date` leak `is_canceled`. They are dropped in `data.drop_leakage`. Leaving them in produces ~100% accuracy and a meaningless model.
+- **Split before scaling, always**: fit `StandardScaler`/`OneHotEncoder` inside a `Pipeline` after the stratified 80/20 split (`split.make_train_test`). Scaling before splitting leaks test statistics into training.
+- **High-cardinality `country`**: 178 values. `OneHotEncoder(min_frequency=50, handle_unknown="ignore")` (in `preprocess.build_preprocessor`) buckets the long tail and tolerates unseen test categories.
+- **Class imbalance ~37/63**: use `class_weight="balanced"`. Headline metrics are ROC AUC + recall on the cancelled class, not accuracy. The "never cancels" baseline already hits ~63%.
+- **`deposit_type=Non Refund` is a known data artefact**: it shows a 99.4% cancel rate that's backwards from intuition (almost certainly retroactive logging). Flag as a caveat in any write-up; do not build a narrative on it.
+- **Missing-value handling is column-specific** (`data.fill_missing`): `children` filled with 0 (only 4 NaNs), `country` filled with "Unknown", `agent`/`company` collapsed to `has_agent`/`has_company` binary flags with the original IDs dropped.
+- **Junk-row filters** (`data.drop_junk_rows`): drop rows where `adults + children + babies == 0`; drop the `adr` outlier (~5400) by filtering `0 <= adr < 1000`.
+- **Engineered features** (`features.add_engineered_features`): `total_nights` (weekend + week), `total_guests`, `is_family`, `room_changed`. The arrival-date split columns (year/week_number/day_of_month) and the two room-type columns are dropped after engineering; `arrival_date_month` is kept as a categorical for seasonality.
+- **`room_changed` is leakage-adjacent**: it can only be 1 if the guest actually showed up. Keep it in the model but flag in any interpretation as not a real-world causal driver.
+- **Interpretation expectations**: positive coefs on `lead_time`, `previous_cancellations`, `deposit_type=Non Refund`, `country_PRT`. Negative on `required_car_parking_spaces` (strongest single signal), `total_of_special_requests`, `is_repeated_guest`, `distribution_channel_GDS`.
 
 ## Data source
 
-tidytuesday `hotels.csv`. The notes suggest loading from the raw GitHub URL on first run and caching locally for faster reruns.
+tidytuesday `hotels.csv`. Currently committed via DVC (TBD in Phase 3) rather than git.
