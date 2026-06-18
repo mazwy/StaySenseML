@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Virtual env
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data — tracked by DVC, not git
+hotels.csv
+data/
+
+# MLflow local store (when not using Docker volume)
+mlruns/
+mlartifacts/
+
+# Models, reports, generated artifacts
+artifacts/
+models/
+reports/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Env files
+.env
+.env.local
