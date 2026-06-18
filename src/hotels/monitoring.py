@@ -62,7 +62,7 @@ def load_split_mode() -> tuple[pd.DataFrame, pd.DataFrame]:
     return reference, current
 
 
-def build_report(reference: pd.DataFrame, current: pd.DataFrame) -> "evidently.core.report.Snapshot":  # noqa: F821
+def build_report(reference: pd.DataFrame, current: pd.DataFrame) -> evidently.core.report.Snapshot:  # noqa: F821
     cols = list(config.NUMERIC_COLUMNS) + list(config.CATEGORICAL_COLUMNS)
     reference = reference[cols]
     current = current[cols]

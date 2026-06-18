@@ -76,7 +76,16 @@ docker compose up -d ui
 # Generate a data drift report (default mode: time-based reference/current).
 .venv/bin/python scripts/run_drift_report.py
 .venv/bin/python scripts/run_drift_report.py --mode split
+
+# Lint + tests (also what GitHub Actions runs).
+.venv/bin/ruff check src/ tests/ scripts/
+.venv/bin/pytest -q
 ```
+
+## Tests + CI
+
+- `tests/` uses synthetic data (no dependency on `hotels.csv` or a running MLflow). The API tests patch `inference.load_production_model` to inject a tiny pipeline trained inline.
+- GitHub Actions: `.github/workflows/ci.yml` runs ruff + pytest on push/PR.
 
 ## Prediction API
 

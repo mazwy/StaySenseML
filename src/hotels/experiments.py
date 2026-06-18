@@ -15,7 +15,6 @@ from typing import Any
 
 import mlflow
 import mlflow.sklearn
-import numpy as np
 import pandas as pd
 from mlflow.models import infer_signature
 from mlflow.tracking import MlflowClient
