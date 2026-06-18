@@ -1,0 +1,34 @@
+[project]
+name = "hotels"
+version = "0.1.0"
+description = "Hotel cancellation prediction. EWD project."
+requires-python = ">=3.11"
+dependencies = [
+    "pandas>=2.2",
+    "numpy>=1.26",
+    "scikit-learn>=1.5",
+    "matplotlib>=3.8",
+    "seaborn>=0.13",
+]
+
+[project.optional-dependencies]
+notebook = ["jupyter", "ipykernel", "nbformat", "nbclient"]
+mlflow = ["mlflow>=2.16"]
+api = ["fastapi>=0.115", "uvicorn[standard]>=0.32", "pydantic>=2.7"]
+ui = ["streamlit>=1.38"]
+monitoring = ["evidently>=0.4"]
+dev = ["pytest>=8", "ruff>=0.6", "httpx>=0.27"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
