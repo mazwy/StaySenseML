@@ -1,0 +1,115 @@
+schema: '2.0'
+stages:
+  clean:
+    cmd: .venv/bin/python -m hotels.stages.clean
+    deps:
+    - path: hotels.csv
+      hash: md5
+      md5: 5bf588c5a949443e021fb7c847d31b27
+      size: 16855599
+    - path: src/hotels/config.py
+      hash: md5
+      md5: 70042f2157c73ba91f04efe81cedf61b
+      size: 1279
+    - path: src/hotels/data.py
+      hash: md5
+      md5: 6d9fb14dc4e83da2becc76ea71ce3d0f
+      size: 1597
+    - path: src/hotels/stages/clean.py
+      hash: md5
+      md5: 6e38590204b4eff424311d87ec0a3c5f
+      size: 587
+    outs:
+    - path: data/cleaned.parquet
+      hash: md5
+      md5: ef49b06f0ba0b5a2b2a226bad7f7d2dc
+      size: 1010593
+  featurize:
+    cmd: .venv/bin/python -m hotels.stages.featurize
+    deps:
+    - path: data/cleaned.parquet
+      hash: md5
+      md5: ef49b06f0ba0b5a2b2a226bad7f7d2dc
+      size: 1010593
+    - path: src/hotels/config.py
+      hash: md5
+      md5: 70042f2157c73ba91f04efe81cedf61b
+      size: 1279
+    - path: src/hotels/features.py
+      hash: md5
+      md5: 2607cbbc7bc1ba89145a74bd96de0969
+      size: 984
+    - path: src/hotels/stages/featurize.py
+      hash: md5
+      md5: 264ee4be6b41d31c91d8685c64fcbd26
+      size: 686
+    outs:
+    - path: data/featured.parquet
+      hash: md5
+      md5: edfd7e3f8c144775dac565be4e601649
+      size: 826669
+  split:
+    cmd: .venv/bin/python -m hotels.stages.split
+    deps:
+    - path: data/featured.parquet
+      hash: md5
+      md5: edfd7e3f8c144775dac565be4e601649
+      size: 826669
+    - path: src/hotels/split.py
+      hash: md5
+      md5: badd87320ab22f028e3b20ccecd11316
+      size: 802
+    - path: src/hotels/stages/split.py
+      hash: md5
+      md5: ce9e94658b0b1f0912b01c6da28da1de
+      size: 1238
+    params:
+      params.yaml:
+        split.random_state: 42
+        split.test_size: 0.2
+    outs:
+    - path: data/test.parquet
+      hash: md5
+      md5: dec3223e81ddb9a4d993156c75043962
+      size: 242337
+    - path: data/train.parquet
+      hash: md5
+      md5: 3be4db6f16ea94344ee7bdc7e87213cb
+      size: 883292
+  train:
+    cmd: .venv/bin/python -m hotels.stages.train
+    deps:
+    - path: data/test.parquet
+      hash: md5
+      md5: dec3223e81ddb9a4d993156c75043962
+      size: 242337
+    - path: data/train.parquet
+      hash: md5
+      md5: 3be4db6f16ea94344ee7bdc7e87213cb
+      size: 883292
+    - path: src/hotels/preprocess.py
+      hash: md5
+      md5: 00a6a7769950703efacc8f54611b198c
+      size: 778
+    - path: src/hotels/stages/train.py
+      hash: md5
+      md5: 76184ae1a2401b3eec8b3144581189ef
+      size: 2536
+    params:
+      params.yaml:
+        model:
+          kind: logreg
+          C: 1.0
+          penalty: l1
+          solver: liblinear
+          class_weight: balanced
+          max_iter: 2000
+    outs:
+    - path: models/model.joblib
+      hash: md5
+      md5: 4be6b0495d7b994f3d95dfb38ed5fb0f
+      size: 11085
+    - path: reports/metrics.json
+      hash: md5
+      md5: 1cbc173430871ea2f90e09c552eead84
+      size: 230

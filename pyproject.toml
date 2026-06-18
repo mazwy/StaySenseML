@@ -9,11 +9,15 @@ dependencies = [
     "scikit-learn>=1.5",
     "matplotlib>=3.8",
     "seaborn>=0.13",
+    "pyarrow>=17",
+    "joblib>=1.4",
+    "pyyaml>=6",
 ]
 
 [project.optional-dependencies]
 notebook = ["jupyter", "ipykernel", "nbformat", "nbclient"]
 mlflow = ["mlflow>=2.16"]
+dvc = ["dvc>=3.55"]
 api = ["fastapi>=0.115", "uvicorn[standard]>=0.32", "pydantic>=2.7"]
 ui = ["streamlit>=1.38"]
 monitoring = ["evidently>=0.4"]

@@ -20,7 +20,10 @@ Current AUC: test 0.8971, CV 0.8986 with `LogisticRegression(class_weight='balan
 - `docker-compose.yml` — services (currently: `mlflow`).
 - `docker/mlflow/Dockerfile` — MLflow tracking server image.
 - `scripts/mlflow_smoke.py` — confirms the tracking server is reachable.
-- `hotels.csv` — raw data, gitignored.
+- `dvc.yaml` + `params.yaml` — DVC pipeline (clean → featurize → split → train). `dvc.lock` records the materialised state.
+- `src/hotels/stages/` — DVC stage entry points (`clean.py`, `featurize.py`, `split.py`, `train.py`), each runnable as `python -m hotels.stages.<name>`.
+- `data/`, `models/`, `reports/` — DVC outputs, gitignored (tracked via `dvc.lock`).
+- `hotels.csv` — raw data, tracked by DVC via `hotels.csv.dvc`, not by git.
 - `.venv/` — uv-managed virtualenv. Always invoke Python as `.venv/bin/python ...`.
 
 ## Common commands
@@ -38,6 +41,15 @@ docker compose down
 
 # MLflow smoke test (logs one run).
 .venv/bin/python scripts/mlflow_smoke.py
+
+# DVC pipeline: run all stages that are stale.
+.venv/bin/dvc repro
+
+# DVC: see the DAG.
+.venv/bin/dvc dag
+
+# DVC: see what changed since the last lock.
+.venv/bin/dvc status
 ```
 
 ## MLflow

@@ -1,0 +1,20 @@
+paths:
+  raw: hotels.csv
+  cleaned: data/cleaned.parquet
+  featured: data/featured.parquet
+  train: data/train.parquet
+  test: data/test.parquet
+  model: models/model.joblib
+  metrics: reports/metrics.json
+
+split:
+  test_size: 0.2
+  random_state: 42
+
+model:
+  kind: logreg
+  C: 1.0
+  penalty: l1
+  solver: liblinear
+  class_weight: balanced
+  max_iter: 2000

@@ -1,0 +1,48 @@
+stages:
+  clean:
+    cmd: .venv/bin/python -m hotels.stages.clean
+    deps:
+      - hotels.csv
+      - src/hotels/data.py
+      - src/hotels/config.py
+      - src/hotels/stages/clean.py
+    outs:
+      - data/cleaned.parquet
+
+  featurize:
+    cmd: .venv/bin/python -m hotels.stages.featurize
+    deps:
+      - data/cleaned.parquet
+      - src/hotels/features.py
+      - src/hotels/config.py
+      - src/hotels/stages/featurize.py
+    outs:
+      - data/featured.parquet
+
+  split:
+    cmd: .venv/bin/python -m hotels.stages.split
+    deps:
+      - data/featured.parquet
+      - src/hotels/split.py
+      - src/hotels/stages/split.py
+    params:
+      - split.test_size
+      - split.random_state
+    outs:
+      - data/train.parquet
+      - data/test.parquet
+
+  train:
+    cmd: .venv/bin/python -m hotels.stages.train
+    deps:
+      - data/train.parquet
+      - data/test.parquet
+      - src/hotels/preprocess.py
+      - src/hotels/stages/train.py
+    params:
+      - model
+    outs:
+      - models/model.joblib
+    metrics:
+      - reports/metrics.json:
+          cache: false
