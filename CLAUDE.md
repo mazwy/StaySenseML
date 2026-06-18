@@ -25,6 +25,7 @@ Current AUC: test 0.8971, CV 0.8986 with `LogisticRegression(class_weight='balan
 - `docker/api/Dockerfile` + the `api` service in `docker-compose.yml` — containerised FastAPI on host port 8000.
 - `src/hotels/ui/` — Plotly Dash demo. `main.py` is the app, `samples.py` has two preset bookings (likely-cancel, likely-stay) the UI can load with a button. The user is not a fan of Streamlit; use Dash for any UI work here.
 - `docker/ui/Dockerfile` + `ui` service in compose — Dash on host port 8050, talks to the api service via `http://api:8000`.
+- `src/hotels/monitoring.py` + `scripts/run_drift_report.py` — Evidently data-drift report. Two modes: `time` (sorts cleaned data by arrival date, first 80% reference vs last 20% current, catches real temporal drift) and `split` (train.parquet vs test.parquet, near-zero drift sanity check). HTML + JSON saved to `reports/drift/`, and the same files are logged as MLflow artifacts under the `hotels-drift-monitoring` experiment.
 - `dvc.yaml` + `params.yaml` — DVC pipeline (clean → featurize → split → train). `dvc.lock` records the materialised state.
 - `src/hotels/stages/` — DVC stage entry points (`clean.py`, `featurize.py`, `split.py`, `train.py`), each runnable as `python -m hotels.stages.<name>`.
 - `data/`, `models/`, `reports/` — DVC outputs, gitignored (tracked via `dvc.lock`).
@@ -71,6 +72,10 @@ docker compose up -d ui
 
 # Local dev: run the UI outside Docker, talking to the local API.
 .venv/bin/python -m hotels.ui.main
+
+# Generate a data drift report (default mode: time-based reference/current).
+.venv/bin/python scripts/run_drift_report.py
+.venv/bin/python scripts/run_drift_report.py --mode split
 ```
 
 ## Prediction API
