@@ -21,6 +21,8 @@ Current AUC: test 0.8971, CV 0.8986 with `LogisticRegression(class_weight='balan
 - `docker/mlflow/Dockerfile` — MLflow tracking server image.
 - `scripts/mlflow_smoke.py` — confirms the tracking server is reachable.
 - `scripts/run_experiments.py` + `src/hotels/experiments.py` — trains LogReg, RandomForest, HistGBM on the DVC-produced split, logs each to MLflow, registers the winner.
+- `src/hotels/api/` — FastAPI prediction service (`main.py`, `schemas.py`, `inference.py`). Loads the model from `models:/hotels-cancellation@production` at startup.
+- `docker/api/Dockerfile` + the `api` service in `docker-compose.yml` — containerised FastAPI on host port 8000.
 - `dvc.yaml` + `params.yaml` — DVC pipeline (clean → featurize → split → train). `dvc.lock` records the materialised state.
 - `src/hotels/stages/` — DVC stage entry points (`clean.py`, `featurize.py`, `split.py`, `train.py`), each runnable as `python -m hotels.stages.<name>`.
 - `data/`, `models/`, `reports/` — DVC outputs, gitignored (tracked via `dvc.lock`).
@@ -55,7 +57,21 @@ docker compose down
 # Run the multi-model experiment (LogReg / RF / HistGBM).
 # Requires the MLflow server up and the DVC split parquets on disk.
 .venv/bin/python scripts/run_experiments.py
+
+# Bring up the prediction API (depends on mlflow being healthy).
+docker compose up -d api
+
+# Local dev: run the API outside Docker, against the dockerised MLflow.
+.venv/bin/uvicorn hotels.api.main:app --reload
 ```
+
+## Prediction API
+
+- FastAPI app at `http://localhost:8000` when running via `docker compose up -d api`.
+- Endpoints: `/healthz`, `/info`, `/predict` (single booking), `/predict/batch` (list).
+- Input schema mirrors the raw csv columns minus the two leakage columns; the API runs `fill_missing` and `engineer` internally before predicting.
+- Threshold is configurable via `HOTELS_DECISION_THRESHOLD` env var (default 0.5).
+- The container talks to MLflow via the compose-internal name `http://mlflow:5000`.
 
 ## MLflow registry
 

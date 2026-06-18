@@ -11,4 +11,5 @@ ENTRYPOINT ["mlflow", "server", \
   "--port", "5000", \
   "--backend-store-uri", "sqlite:////mlflow/store/mlflow.db", \
   "--artifacts-destination", "/mlflow/artifacts", \
-  "--serve-artifacts"]
+  "--serve-artifacts", \
+  "--allowed-hosts", "*"]
