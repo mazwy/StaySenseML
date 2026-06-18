@@ -20,6 +20,7 @@ Current AUC: test 0.8971, CV 0.8986 with `LogisticRegression(class_weight='balan
 - `docker-compose.yml` — services (currently: `mlflow`).
 - `docker/mlflow/Dockerfile` — MLflow tracking server image.
 - `scripts/mlflow_smoke.py` — confirms the tracking server is reachable.
+- `scripts/run_experiments.py` + `src/hotels/experiments.py` — trains LogReg, RandomForest, HistGBM on the DVC-produced split, logs each to MLflow, registers the winner.
 - `dvc.yaml` + `params.yaml` — DVC pipeline (clean → featurize → split → train). `dvc.lock` records the materialised state.
 - `src/hotels/stages/` — DVC stage entry points (`clean.py`, `featurize.py`, `split.py`, `train.py`), each runnable as `python -m hotels.stages.<name>`.
 - `data/`, `models/`, `reports/` — DVC outputs, gitignored (tracked via `dvc.lock`).
@@ -50,7 +51,19 @@ docker compose down
 
 # DVC: see what changed since the last lock.
 .venv/bin/dvc status
+
+# Run the multi-model experiment (LogReg / RF / HistGBM).
+# Requires the MLflow server up and the DVC split parquets on disk.
+.venv/bin/python scripts/run_experiments.py
 ```
+
+## MLflow registry
+
+- Tracking server: `http://localhost:5001` (MLflow 3.14.0 in Docker, served with `--serve-artifacts`).
+- Experiment: `hotels-cancellation`.
+- Registered model name: `hotels-cancellation`.
+- Winner is tagged `model_kind` and `auc`, and gets the `production` alias.
+- Load from any client with `mlflow.sklearn.load_model("models:/hotels-cancellation@production")`.
 
 ## MLflow
 
