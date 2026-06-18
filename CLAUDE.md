@@ -23,6 +23,8 @@ Current AUC: test 0.8971, CV 0.8986 with `LogisticRegression(class_weight='balan
 - `scripts/run_experiments.py` + `src/hotels/experiments.py` — trains LogReg, RandomForest, HistGBM on the DVC-produced split, logs each to MLflow, registers the winner.
 - `src/hotels/api/` — FastAPI prediction service (`main.py`, `schemas.py`, `inference.py`). Loads the model from `models:/hotels-cancellation@production` at startup.
 - `docker/api/Dockerfile` + the `api` service in `docker-compose.yml` — containerised FastAPI on host port 8000.
+- `src/hotels/ui/` — Plotly Dash demo. `main.py` is the app, `samples.py` has two preset bookings (likely-cancel, likely-stay) the UI can load with a button. The user is not a fan of Streamlit; use Dash for any UI work here.
+- `docker/ui/Dockerfile` + `ui` service in compose — Dash on host port 8050, talks to the api service via `http://api:8000`.
 - `dvc.yaml` + `params.yaml` — DVC pipeline (clean → featurize → split → train). `dvc.lock` records the materialised state.
 - `src/hotels/stages/` — DVC stage entry points (`clean.py`, `featurize.py`, `split.py`, `train.py`), each runnable as `python -m hotels.stages.<name>`.
 - `data/`, `models/`, `reports/` — DVC outputs, gitignored (tracked via `dvc.lock`).
@@ -63,6 +65,12 @@ docker compose up -d api
 
 # Local dev: run the API outside Docker, against the dockerised MLflow.
 .venv/bin/uvicorn hotels.api.main:app --reload
+
+# Bring up the Dash demo UI.
+docker compose up -d ui
+
+# Local dev: run the UI outside Docker, talking to the local API.
+.venv/bin/python -m hotels.ui.main
 ```
 
 ## Prediction API

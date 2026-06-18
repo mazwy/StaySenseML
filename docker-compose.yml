@@ -36,6 +36,20 @@ services:
       retries: 10
       start_period: 30s
 
+  ui:
+    build:
+      context: .
+      dockerfile: docker/ui/Dockerfile
+    container_name: hotels-ui
+    ports:
+      - "8050:8050"
+    environment:
+      HOTELS_API_BASE: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   mlflow-store:
   mlflow-artifacts:
