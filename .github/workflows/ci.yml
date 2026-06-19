@@ -30,6 +30,6 @@ jobs:
       - name: install package + extras
         run: |
           pip install --upgrade pip
-          pip install -e ".[api,dev]"
+          pip install -e ".[api,mlflow,dev]"
       - name: pytest
         run: pytest -q
