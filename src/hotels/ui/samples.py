@@ -1,6 +1,6 @@
 """Two pre-filled booking payloads for the demo: one that the model considers
 likely to cancel, one that it considers likely to stay. Sourced from rows in
-`hotels.csv` chosen by `_pick_samples.py` (run once, output cached here)."""
+hotels.csv chosen by _pick_samples.py (run once, output cached here)."""
 from __future__ import annotations
 
 LIKELY_CANCEL: dict = {

@@ -4,7 +4,7 @@ Trains LogReg, RandomForest, and HistGradientBoosting on the same train/test
 split (produced by the DVC split stage). Each model is a separate MLflow run
 inside the same experiment. The run with the highest held-out ROC AUC is
 registered as a new model version under the registered model name, and the
-`production` alias is moved onto it.
+production alias is moved onto it.
 """
 from __future__ import annotations
 

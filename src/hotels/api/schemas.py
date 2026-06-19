@@ -2,8 +2,8 @@
 
 The input mirrors a raw booking record: same columns and dtypes the cleaning
 pipeline expects, minus the two leakage columns. The model is trained on the
-post-cleaning feature set, so the API runs `fill_missing` and `engineer`
-internally before calling `predict_proba`.
+post-cleaning feature set, so the API runs fill_missing and engineer
+internally before calling predict_proba.
 """
 from __future__ import annotations
 

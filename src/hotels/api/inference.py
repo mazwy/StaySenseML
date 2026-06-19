@@ -1,8 +1,8 @@
 """Model loading + inference plumbing for the FastAPI app.
 
 The production model is fetched from the MLflow registry via the alias defined
-in `hotels.experiments`. The cleaning chain run here matches what the model
-saw during training, minus `drop_junk_rows` (the API should not silently drop
+in hotels.experiments. The cleaning chain run here matches what the model
+saw during training, minus drop_junk_rows (the API should not silently drop
 records: schema validation does that job upstream)."""
 from __future__ import annotations
 
