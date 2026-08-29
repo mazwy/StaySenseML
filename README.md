@@ -25,6 +25,35 @@
 
 ---
 
+## Dataset
+
+The raw data is `hotels.csv` from the [TidyTuesday archive, week 2020-02-11](https://github.com/rfordatascience/tidytuesday/tree/main/data/2020/2020-02-11). That file originates from Antonio, N., de Almeida, A., and Nunes, L. (2019), "Hotel booking demand datasets", *Data in Brief* 22, 41-49 ([doi:10.1016/j.dib.2018.11.126](https://doi.org/10.1016/j.dib.2018.11.126)), released under CC BY 4.0.
+
+| Property | Value |
+| :--- | :--- |
+| Rows | 119,390 |
+| Columns | 32 |
+| Properties | two Portuguese hotels: City Hotel (79,330) and Resort Hotel (40,060) |
+| Arrival years | 2015 to 2017 |
+| Target | `is_canceled` |
+| Class balance | 37.0% cancelled (44,224 of 119,390) |
+| MD5 | `5bf588c5a949443e021fb7c847d31b27` |
+
+`hotels.csv` is tracked by DVC (`hotels.csv.dvc`) and excluded from git, so a fresh clone does not contain it. No DVC remote is configured, so `dvc pull` will not fetch it either. Download it directly before running the pipeline:
+
+```bash
+curl -L -o hotels.csv \
+  https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2020/2020-02-11/hotels.csv
+
+# Verify it matches the version this pipeline was built against
+md5 -q hotels.csv    # macOS      -> 5bf588c5a949443e021fb7c847d31b27
+md5sum hotels.csv    # Linux
+```
+
+Note on leakage: the source columns `reservation_status` and `reservation_status_date` record what happened after a booking was resolved, so they are dropped in the `clean` stage. Leaving them in produces a model that appears near-perfect and generalizes to nothing.
+
+---
+
 ## System Architecture
 
 ```mermaid
@@ -170,9 +199,12 @@ pip install -e ".[notebook,mlflow,dvc,api,ui,monitoring,dev]"
 ```
 
 #### 2. Run the DVC Data Pipeline
-Rerun data preparation, feature engineering, and baseline training:
+Fetch the raw dataset first, since it is not part of the repository (see [Dataset](#dataset)), then rerun data preparation, feature engineering, and baseline training:
 
 ```bash
+curl -L -o hotels.csv \
+  https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2020/2020-02-11/hotels.csv
+
 dvc repro
 ```
 
